@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mock Publicável de Incidentes</title>
+<meta name="description" content="600 incidentes de segurança, 12 categorias NIST, nenhum identificador real. Um mock verificado e validado como artefato reprodutível. LEAS 2026.2, Unipampa.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Plano: um chamado de incidente é o objeto central. Identificadores aparecem como tarjas e
+   se resolvem em valores fictícios (faixas de documentação das RFCs). Marca-texto âmbar = substituição.
+   Layout: coluna de leitura de ~68ch, com blocos largos para o chamado, os gráficos e a linha do tempo. */
+:root{
+  --paper:#f4f5f2;
+  --surface:#ffffff;
+  --ink:#16202a;
+  --muted:#5b6670;
+  --rule:#d9ddd8;
+  --mark:#f2c14e;
+  --mark-ink:#5a3d00;
+  --accent:#1f5f8b;
+  --ok:#2e7d4f;
+  --warn:#b7791f;
+  --pend:#8a8f96;
+  --redact:#16202a;
+  --display:"Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --body:"IBM Plex Sans", "Segoe UI", Roboto, Arial, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#11171d; --surface:#18212a; --ink:#e7ebee; --muted:#9aa6b1; --rule:#2a3540;
+    --mark:#e0b041; --mark-ink:#1d1400; --accent:#6fb3e0; --ok:#5cc08a; --warn:#e0a84a; --pend:#7d8792;
+    --redact:#e7ebee; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#11171d; --surface:#18212a; --ink:#e7ebee; --muted:#9aa6b1; --rule:#2a3540;
+  --mark:#e0b041; --mark-ink:#1d1400; --accent:#6fb3e0; --ok:#5cc08a; --warn:#e0a84a; --pend:#7d8792;
+  --redact:#e7ebee; color-scheme: dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 17px/1.6 var(--body)}
+a{color:var(--accent)}
+a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+.read{max-width:68ch}
+h1,h2,h3{font-family:var(--display);line-height:1.08;text-wrap:balance;margin:0}
+h2{font-size:clamp(1.7rem,3.4vw,2.4rem);font-weight:800;letter-spacing:-.01em}
+h3{font-size:1.15rem;font-weight:700}
+p{margin:0}
+section{padding:64px 0;border-top:1px solid var(--rule)}
+.kicker{font:500 .78rem/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.stack{display:grid;gap:18px}
+.lede{font-size:1.15rem;color:var(--muted)}
+.num{font-variant-numeric:tabular-nums}
+
+/* Topo */
+header.top{padding:22px 0 0}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font:500 .8rem/1 var(--mono);color:var(--muted)}
+.hero{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center;padding:44px 0 56px}
+.hero h1{font-size:clamp(2.6rem,6.4vw,4.6rem);font-weight:800;letter-spacing:-.025em}
+.hero h1 .hl{background:linear-gradient(transparent 58%,var(--mark) 58%);padding:0 .06em}
+.hero .lede{margin-top:20px;max-width:46ch}
+.facts{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}
+.chip{font:500 .8rem/1 var(--mono);border:1px solid var(--rule);background:var(--surface);padding:7px 10px;border-radius:999px}
+
+/* Chamado */
+.ticket{background:var(--surface);border:1px solid var(--rule);border-radius:10px;box-shadow:0 18px 40px -24px rgba(10,20,30,.35);font:400 .86rem/1.65 var(--mono);overflow:hidden}
+.ticket .bar{display:flex;justify-content:space-between;gap:10px;padding:10px 14px;border-bottom:1px solid var(--rule);color:var(--muted);font-size:.76rem}
+.ticket .body{padding:16px 16px 12px;overflow-x:auto}
+.ticket .row{white-space:pre-wrap;word-break:break-word}
+.ticket .k{color:var(--muted)}
+.sub{position:relative;display:inline-block;border-radius:3px;padding:0 3px}
+.sub .r{position:absolute;inset:2px 0;background:var(--redact);border-radius:2px;opacity:0;transform-origin:right;animation:unredact .5s ease backwards;animation-delay:var(--d)}
+.sub .v{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2px}
+@keyframes unredact{from{opacity:1;transform:none}to{opacity:1;transform:scaleX(0)}}
+.stamps{display:flex;gap:8px;align-items:center;padding:12px 14px;border-top:1px dashed var(--rule);flex-wrap:wrap}
+.stamp{font:700 .72rem/1 var(--mono);letter-spacing:.06em;border:1.5px solid currentColor;border-radius:6px;padding:6px 8px;animation:pop .35s ease backwards;animation-delay:var(--d)}
+.stamp.ok{color:var(--ok)} .stamp.pend{color:var(--pend);border-style:dashed}
+.stamp.check{color:var(--accent)}
+@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+.replay{margin-left:auto;font:500 .74rem/1 var(--mono);background:none;border:1px solid var(--rule);color:var(--muted);border-radius:6px;padding:6px 8px;cursor:pointer}
+.replay:hover{color:var(--ink);border-color:var(--muted)}
+.legend-mini{font:400 .74rem/1.4 var(--mono);color:var(--muted);padding:0 14px 12px}
+
+/* Vídeo */
+.video{margin-top:-12px;aspect-ratio:16/9;max-width:640px;border-radius:10px;border:1px dashed var(--muted);display:grid;place-items:center;text-align:center;background:var(--surface);color:var(--muted);padding:20px}
+.video strong{display:block;font:700 1.2rem/1.2 var(--display);color:var(--ink);margin-bottom:6px}
+
+/* Cartões do problema */
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:28px}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:18px;display:grid;gap:8px;align-content:start}
+.card .n{font:800 2rem/1 var(--display);color:var(--accent)}
+.card p{color:var(--muted);font-size:.95rem}
+
+/* Fluxo */
+.flow{display:grid;grid-template-columns:repeat(6,1fr);gap:0;margin-top:30px;counter-reset:f}
+.step{position:relative;padding:16px 14px 14px;border-top:3px solid var(--rule);display:grid;gap:6px;align-content:start}
+.step::before{counter-increment:f;content:"F" counter(f);font:500 .75rem/1 var(--mono);color:var(--muted)}
+.step h3{font-size:1.02rem}
+.step p{font-size:.88rem;color:var(--muted)}
+.step.on{border-top-color:var(--accent)}
+.flow.play .step{animation:lit 3.6s ease both;animation-delay:calc(var(--i) * .45s)}
+@keyframes lit{0%{border-top-color:var(--rule)}20%,100%{border-top-color:var(--accent)}}
+
+/* Exemplo */
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:26px}
+.pane{background:var(--surface);border:1px solid var(--rule);border-radius:10px;overflow:hidden}
+.pane .h{padding:10px 14px;border-bottom:1px solid var(--rule);font:500 .76rem/1 var(--mono);color:var(--muted);display:flex;justify-content:space-between}
+.pane pre{margin:0;padding:14px;font:400 .82rem/1.65 var(--mono);white-space:pre-wrap;word-break:break-word}
+.hide{background:var(--redact);color:transparent;border-radius:2px;user-select:none}
+.mk{background:var(--mark);color:var(--mark-ink);border-radius:2px;padding:0 2px}
+.note{font-size:.88rem;color:var(--muted);margin-top:12px}
+
+/* Números grandes */
+.big{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:28px}
+.big div{border-left:3px solid var(--accent);padding:4px 0 4px 14px}
+.big b{display:block;font:800 clamp(2rem,4.4vw,3rem)/1 var(--display);font-variant-numeric:tabular-nums}
+.big span{font-size:.9rem;color:var(--muted)}
+
+/* Gráficos */
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:30px}
+figure{margin:0;background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:18px}
+figcaption{font-size:.9rem;color:var(--muted);margin-top:10px}
+figure h3{margin-bottom:12px}
+svg text{font-family:var(--mono);fill:var(--muted);font-size:11px}
+svg .lab{fill:var(--ink);font-family:var(--body);font-size:12.5px}
+svg .val{fill:var(--ink);font-weight:500}
+.key{display:flex;gap:14px;flex-wrap:wrap;font:400 .78rem/1 var(--mono);color:var(--muted);margin-bottom:8px}
+.key i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.comp{display:flex;height:34px;border-radius:6px;overflow:hidden;margin-top:6px}
+.comp div{display:grid;place-items:center;font:500 .78rem/1 var(--mono);color:#fff;white-space:nowrap;overflow:hidden}
+.comp-legend{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px;font-size:.88rem}
+.comp-legend b{display:block;font:700 1.3rem/1.1 var(--display)}
+
+/* Linha do tempo */
+.tl{margin-top:26px;border:1px solid var(--rule);border-radius:10px;background:var(--surface);overflow-x:auto}
+.tl table{width:100%;border-collapse:collapse;font-size:.92rem;min-width:640px}
+.tl th,.tl td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--rule);vertical-align:top}
+.tl th{font:500 .74rem/1 var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.tl tr:last-child td{border-bottom:0}
+.tl td:first-child{font-family:var(--mono);white-space:nowrap;color:var(--muted)}
+.pill{display:inline-block;font:500 .72rem/1 var(--mono);padding:5px 8px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.pill.ok{color:var(--ok)} .pill.run{color:var(--warn)} .pill.pend{color:var(--pend);border-style:dashed}
+
+/* Papéis */
+.roles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:26px}
+.role{border-top:3px solid var(--ink);padding-top:14px;display:grid;gap:8px}
+.role p{color:var(--muted);font-size:.95rem}
+
+/* Limites */
+details{border-bottom:1px solid var(--rule);padding:14px 0}
+details:first-of-type{border-top:1px solid var(--rule)}
+summary{cursor:pointer;font-weight:600;list-style:none;display:flex;gap:10px;align-items:baseline}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+";font:500 1rem/1 var(--mono);color:var(--accent);width:1ch}
+details[open] summary::before{content:"−"}
+details p{margin-top:10px;color:var(--muted)}
+.limits{margin-top:24px}
+
+/* Rodapé */
+footer{border-top:1px solid var(--rule);padding:40px 0 60px;font-size:.92rem;color:var(--muted)}
+.foot{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.foot h3{color:var(--ink);margin-bottom:8px;font-size:1rem}
+.badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+
+@media (max-width:900px){
+  .hero{grid-template-columns:1fr;gap:30px}
+  .cards{grid-template-columns:1fr 1fr}
+  .flow{grid-template-columns:repeat(3,1fr);row-gap:16px}
+  .charts,.pair{grid-template-columns:1fr}
+  .big{grid-template-columns:1fr 1fr}
+  .roles,.foot{grid-template-columns:1fr}
+}
+@media (max-width:440px){
+  .cards,.big,.flow{grid-template-columns:1fr}
+  .comp-legend{grid-template-columns:1fr}
+  body{font-size:16px}
+}
+@media (prefers-reduced-motion: reduce){
+  .sub .r{display:none}
+  .stamp,.flow.play .step{animation:none}
+  .step{border-top-color:var(--accent)}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap topbar">
+    <span>LEAS 2026.2 · Unipampa · PPGES</span>
+    <span>Alex Sandre Pinheiro Severo</span>
+  </div>
+  <div class="wrap hero">
+    <div>
+      <div class="kicker">Artefato reprodutível · Avaliação de artefatos e de LLMs</div>
+      <h1>Seiscentos incidentes. <span class="hl">Nenhum identificador real.</span></h1>
+      <p class="lede">Uma base de incidentes de segurança que pode ser publicada: os relatos continuam os mesmos, e tudo o que identifica alguém foi trocado por valores fictícios. Depois, verificamos que nada vazou e que os classificadores tratam a cópia como tratam o original.</p>
+      <div class="facts">
+        <span class="chip">600 casos</span>
+        <span class="chip">12 categorias NIST × 50</span>
+        <span class="chip">3 origens</span>
+        <span class="chip">0 falhas na verificação</span>
+      </div>
+    </div>
+
+    <div class="ticket" aria-label="Exemplo ilustrativo de um chamado transformado">
+      <div class="bar"><span>INC-0417 · CAT4 · exemplo ilustrativo</span><span>mock</span></div>
+      <div class="body" id="tk">
+        <div class="row"><span class="k">De:      </span><span class="sub" style="--d:.5s"><span class="v">cert@csirt001.example.org</span><span class="r"></span></span></div>
+        <div class="row"><span class="k">Enviado: </span><span class="sub" style="--d:.8s"><span class="v">qui, 14 jan 2027 09:12</span><span class="r"></span></span></div>
+        <div class="row"><span class="k">Origem:  </span><span class="sub" style="--d:1.1s"><span class="v">203.0.113.47</span><span class="r"></span></span><span class="k"> · AS</span><span class="sub" style="--d:1.3s"><span class="v">64512</span><span class="r"></span></span></div>
+        <div class="row">&nbsp;</div>
+        <div class="row">Recebemos notificação de varredura SSH a partir de um host da sua rede (<span class="sub" style="--d:1.6s"><span class="v">srv-07.campus.example.edu</span><span class="r"></span></span>), com mais de 4 mil tentativas de login em 20 minutos. Solicitamos verificação e retorno pelo chamado <span class="sub" style="--d:1.9s"><span class="v">SGI001-2027-00318</span><span class="r"></span></span>.</div>
+      </div>
+      <div class="stamps" id="stamps">
+        <span class="stamp check" style="--d:2.4s">VERIFICADO</span>
+        <span class="stamp ok" style="--d:2.8s">F</span>
+        <span class="stamp ok" style="--d:3.0s">S</span>
+        <span class="stamp ok" style="--d:3.2s">R</span>
+        <span class="stamp pend" style="--d:3.4s">D · pendente</span>
+        <button class="replay" id="replay" type="button">Repetir</button>
+      </div>
+      <p class="legend-mini">Texto inventado para ilustrar. Em âmbar, os valores fictícios: faixas reservadas das RFCs, domínios example, ASN privado e ano 2027.</p>
+    </div>
+  </div>
+</header>
+
+<div class="wrap" style="padding-bottom:48px">
+  <div class="video" role="img" aria-label="Espaço do vídeo do projeto">
+    <div><strong>Vídeo de 2 a 3 minutos</strong>Em produção. Ele vai aparecer aqui, no topo da página.</div>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">O problema</div>
+    <h2>Uma base que não pode sair não pode ser reproduzida</h2>
+    <div class="cards">
+      <div class="card"><span class="n">194</span><h3>Incidentes reais</h3><p>Notificações de um CSIRT regional, usadas nos artigos de 2025. Não podem ser publicadas.</p></div>
+      <div class="card"><span class="n">0</span><h3>Reproduções possíveis</h3><p>Sem a base, ninguém repete os experimentos de classificação com LLM.</p></div>
+      <div class="card"><span class="n">2</span><h3>Provas exigidas</h3><p>Que nada identifica ninguém, e que o substituto se comporta como o original.</p></div>
+      <div class="card"><span class="n">4</span><h3>Selos em jogo</h3><p>Disponível, Funcional, Sustentável e Reprodutível, como na avaliação de artefatos do SBSeg.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">O método</div>
+    <h2>Do chamado real ao pacote com selos, em seis fases</h2>
+    <div class="flow" id="flow">
+      <div class="step" style="--i:0"><h3>Higiene</h3><p>Classificar cada arquivo em público, condicional ou interno.</p></div>
+      <div class="step" style="--i:1"><h3>Normalização</h3><p>Três origens no mesmo formato: 12 categorias × 50 casos.</p></div>
+      <div class="step" style="--i:2"><h3>Rotulagem</h3><p>Gabarito por categoria NIST, validado por especialista.</p></div>
+      <div class="step" style="--i:3"><h3>Substituição</h3><p>Identificadores por HMAC, IPs e domínios de documentação, datas deslocadas.</p></div>
+      <div class="step" style="--i:4"><h3>Verificação</h3><p>Testes de estrutura e de vazamento, com e sem acesso ao original.</p></div>
+      <div class="step" style="--i:5"><h3>Validação</h3><p>Os mesmos classificadores no original e no mock. Comparar.</p></div>
+    </div>
+    <details style="margin-top:22px">
+      <summary>O que exatamente é trocado</summary>
+      <p>Nomes de pessoas e de equipes, domínios, endereços IPv4, ASN, e-mails, telefones, CNPJ, números de chamado e datas. Endereços vão para as faixas reservadas (RFC 5737), domínios para example.* (RFC 2606), o ASN para 64512 (RFC 6996) e todas as datas para 2027 ou depois, mantendo a ordem e os intervalos dentro de cada incidente. A troca usa uma chave HMAC que fica fora do repositório, então o mesmo valor real vira sempre o mesmo valor fictício, mas o caminho de volta exige o original.</p>
+    </details>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">Entrada e saída</div>
+    <h2>O relato fica. O que identifica, sai.</h2>
+    <div class="pair">
+      <div class="pane">
+        <div class="h"><span>Entrada · base original</span><span>valores ocultos</span></div>
+<pre>Assunto: Phishing hospedado em <span class="hide">xxxxxxxxxxxxxxxx</span>
+Enviado: <span class="hide">xxxxxxxxxxxxxxxxxxxxx</span>
+
+Identificamos página falsa de login de webmail
+em http://<span class="hide">xxxxxxxxxxxxxxxxxxxx</span>/conta/, no endereço
+<span class="hide">xxxxxxxxxxxx</span>. A página coleta usuário e senha
+e reenvia para <span class="hide">xxxxxxxxxxxxxxxxxxx</span>.
+Contato do responsável: <span class="hide">xxxxxxxxxxxxx</span>.</pre>
+      </div>
+      <div class="pane">
+        <div class="h"><span>Saída · mock publicado</span><span>CAT6</span></div>
+<pre>Assunto: Phishing hospedado em <span class="mk">portal.example.net</span>
+Enviado: <span class="mk">ter, 09 mar 2027 16:40</span>
+
+Identificamos página falsa de login de webmail
+em http://<span class="mk">portal.example.net</span>/conta/, no endereço
+<span class="mk">198.51.100.23</span>. A página coleta usuário e senha
+e reenvia para <span class="mk">coleta@example.com</span>.
+Contato do responsável: <span class="mk">+55 51 5550-1234</span>.</pre>
+      </div>
+    </div>
+    <p class="note">Exemplo inventado, com a mesma forma de um registro real. O original nunca sai do servidor; por isso a entrada aparece com os valores ocultos.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">Resultados</div>
+    <h2>Trocar a base muda tanto quanto rodar o modelo de novo</h2>
+    <div class="big">
+      <div><b class="num">94,4%</b><span>concordância original × mock nos 600 casos</span></div>
+      <div><b class="num">94,8%</b><span>concordância do original consigo mesmo</span></div>
+      <div><b class="num">0</b><span>falhas nos testes de vazamento</span></div>
+      <div><b class="num">37</b><span>testes automatizados no repositório</span></div>
+    </div>
+
+    <div class="charts">
+      <figure>
+        <h3>Concordância de categoria, por origem</h3>
+        <div class="key"><span><i style="background:var(--accent)"></i>PHP</span><span><i style="background:var(--warn)"></i>SHP</span><span><i style="background:transparent;border:1.5px dashed var(--muted)"></i>original × original</span></div>
+        <svg id="c1" viewBox="0 0 460 210" width="100%" role="img" aria-label="Gráfico de concordância por origem"></svg>
+        <figcaption>SecLINC com Gemini 3.6 Flash, 3 repetições. PHP e SHP são técnicas de prompt. Escala de 80 a 100%.</figcaption>
+      </figure>
+      <figure>
+        <h3>Treinar no mock, testar no original</h3>
+        <div class="key"><span><i style="background:var(--muted)"></i>treino e teste no original</span><span><i style="background:var(--accent)"></i>treino no mock, teste no original</span></div>
+        <svg id="c2" viewBox="0 0 460 210" width="100%" role="img" aria-label="Gráfico de acurácia TSTR"></svg>
+        <figcaption>Acurácia média em 5 dobras. Escala de 70 a 80%. Diferenças abaixo de 1 ponto, com desvio entre dobras perto de 10.</figcaption>
+      </figure>
+    </div>
+
+    <figure style="margin-top:18px">
+      <h3>De onde vêm os 600 casos</h3>
+      <div class="comp" role="img" aria-label="Composição por origem">
+        <div style="flex:106;background:var(--accent)">106</div>
+        <div style="flex:219;background:#3f8a6e">219</div>
+        <div style="flex:275;background:var(--pend)">275</div>
+      </div>
+      <div class="comp-legend">
+        <div><b class="num">106</b>CSIRT regional, transformados</div>
+        <div><b class="num">219</b>CAIS/RNP 2025, transformados</div>
+        <div><b class="num">275</b>VCDB, pública, texto mantido</div>
+      </div>
+      <figcaption>Os 275 da VCDB já são públicos e funcionam como controle. O número que mede a transformação é o dos 325 casos das duas primeiras origens.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">O semestre</div>
+    <h2>O combinado e o entregue</h2>
+    <div class="tl">
+      <table>
+        <thead><tr><th>Data</th><th>Combinado</th><th>Entregue</th><th>Situação</th></tr></thead>
+        <tbody>
+          <tr><td>08/11</td><td>Separar o que pode ser publicado</td><td>Mapa de sigilo da pasta e manifesto com hashes</td><td><span class="pill ok">entregue</span></td></tr>
+          <tr><td>10/11</td><td>Repositório com teste mínimo</td><td>Repositório privado, CI verde em ambiente limpo</td><td><span class="pill ok">entregue</span></td></tr>
+          <tr><td>11/11</td><td>Tarefas da disciplina</td><td>T1 (MedTracker), T2 (revisor) e T6 no Classroom</td><td><span class="pill ok">entregue</span></td></tr>
+          <tr><td>15/11</td><td>Mock verificado e validado</td><td>v1.0.0 em commit único; 0 falhas; validação nos 600</td><td><span class="pill ok">entregue</span></td></tr>
+          <tr><td>16/11</td><td>Apresentação ao professor</td><td>T4 em aula; apontamentos recebidos</td><td><span class="pill ok">entregue</span></td></tr>
+          <tr><td>16–17/11</td><td>Responder aos apontamentos</td><td>TSTR, varredura NER, ablação da queda no CAIS/RNP</td><td><span class="pill run">em andamento</span></td></tr>
+          <tr><td>até 23/11</td><td>Site e vídeo</td><td>Esta página; vídeo em produção</td><td><span class="pill run">em andamento</span></td></tr>
+          <tr><td>simulação final</td><td>Submeter ao sistema de avaliação da turma</td><td>Aguardando instruções</td><td><span class="pill pend">pendente</span></td></tr>
+          <tr><td>a definir</td><td>Repositório público e DOI</td><td>Depende de autorizações escritas das fontes</td><td><span class="pill pend">pendente</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">Três papéis</div>
+    <h2>O mesmo tema visto como autor, revisor e analista</h2>
+    <div class="roles">
+      <div class="role"><h3>Autor</h3><p>Este mock, preparado para a trilha de artefatos com README nas seções exigidas, datasheet, licenças, Docker e CI.</p></div>
+      <div class="role"><h3>Revisor</h3><p>A experiência em comitê de avaliação de artefatos, e o que ela ensina sobre a conversa truncada entre avaliador anônimo e autores.</p></div>
+      <div class="role"><h3>Analista</h3><p>A análise do artefato MedTracker (SBRC 2026) com a mesma régua de selos aplicada aqui.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">Limites declarados</div>
+    <h2>O que este trabalho não prova</h2>
+    <div class="limits read">
+      <details>
+        <summary>É pseudonimização, não dado sintético</summary>
+        <p>O texto de cada incidente é preservado e só os identificadores mudam. Chamamos de mock por substituição. Uma versão realmente sintética, com relatos novos, é extensão futura.</p>
+      </details>
+      <details>
+        <summary>A origem CAIS/RNP perde de 4 a 7 pontos</summary>
+        <p>Na maior origem transformada, a concordância cai para 92,2% (PHP) e 88,6% (SHP). A ablação apontou a causa: o classificador usava o nome do centro de origem como pista para separar duas categorias. Retirar essa troca recupera o efeito com PHP e reduz com SHP. A correção está em decisão.</p>
+      </details>
+      <details>
+        <summary>Um classificador principal</summary>
+        <p>O resultado nos 600 casos usa um modelo (Gemini 3.6 Flash via SecLINC). Os 21 modelos locais rodaram numa amostra de 48 casos; a ampliação para 240 está em andamento.</p>
+      </details>
+      <details>
+        <summary>O controle infla o número agregado</summary>
+        <p>Os 275 casos da VCDB têm o mesmo texto nas duas bases. Por isso os resultados também são reportados por origem.</p>
+      </details>
+      <details>
+        <summary>Publicação condicionada</summary>
+        <p>O repositório fica privado até as autorizações escritas das fontes e uma revisão de risco de reidentificação do texto livre. Só então sai o DOI, que é irreversível. O gabarito ainda pede um segundo anotador independente.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot">
+    <div>
+      <h3>Código e dados</h3>
+      <p>Repositório privado até a liberação. O link entra aqui quando ele for aberto.</p>
+      <div class="badges"><span class="pill ok">Funcional</span><span class="pill ok">Sustentável</span><span class="pill ok">Reprodutível</span><span class="pill pend">Disponível</span></div>
+    </div>
+    <div>
+      <h3>Quem fez</h3>
+      <p>Alex Sandre Pinheiro Severo, Mestrado Profissional em Engenharia de Software (PPGES), Unipampa. Orientação: Prof. Diego Kreutz.</p>
+    </div>
+    <div>
+      <h3>Sobre os números</h3>
+      <p>Resultados de 15 a 17/11/2026. Fontes das bases: CSIRT regional (não publicada), CAIS/RNP 2025 e VERIS Community Database.</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var css = getComputedStyle(document.documentElement);
+  function tok(n){ return css.getPropertyValue(n).trim(); }
+  var NS = "http://www.w3.org/2000/svg";
+  function el(name, attrs, text){
+    var e = document.createElementNS(NS, name);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function fmt(v){ return v.toFixed(1).replace(".", ","); }
+
+  // Gráfico de pontos: linhas = grupos; eixo x com min/max fixos
+  function dots(svg, opt){
+    var W = 460, left = 128, right = 18, top = 14, rowH = opt.rowH || 52;
+    var x = function(v){ return left + (v - opt.min) / (opt.max - opt.min) * (W - left - right); };
+    var axisY = top + opt.rows.length * rowH + 6;
+    svg.setAttribute("viewBox", "0 0 " + W + " " + (axisY + 24));
+    for (var t = opt.min; t <= opt.max; t += opt.step){
+      svg.appendChild(el("line", {x1:x(t), x2:x(t), y1:top - 6, y2:axisY, stroke:tok("--rule"), "stroke-width":1}));
+      svg.appendChild(el("text", {x:x(t), y:axisY + 16, "text-anchor":"middle"}, t + "%"));
+    }
+    opt.rows.forEach(function(r, i){
+      var cy = top + i * rowH + rowH / 2;
+      svg.appendChild(el("text", {x:0, y:cy + 4, class:"lab"}, r.label));
+      if (r.base != null){
+        svg.appendChild(el("line", {x1:x(r.base), x2:x(r.base), y1:cy - 15, y2:cy + 15, stroke:tok("--muted"), "stroke-width":1.5, "stroke-dasharray":"3 3"}));
+      }
+      var vals = r.vals.map(function(v){ return v; });
+      var lo = Math.min.apply(null, vals.map(function(v){return v.v;})), hi = Math.max.apply(null, vals.map(function(v){return v.v;}));
+      svg.appendChild(el("line", {x1:x(lo), x2:x(hi), y1:cy, y2:cy, stroke:tok("--rule"), "stroke-width":3}));
+      r.vals.forEach(function(v, j){
+        var cx = x(v.v);
+        svg.appendChild(el("circle", {cx:cx, cy:cy, r:6, fill:tok(v.c), stroke:tok("--surface"), "stroke-width":2}));
+        var dy = j === 0 ? -11 : 21;
+        svg.appendChild(el("text", {x:cx, y:cy + dy, "text-anchor":"middle", class:"val"}, fmt(v.v)));
+      });
+    });
+  }
+
+  dots(document.getElementById("c1"), {
+    min:80, max:100, step:5,
+    rows:[
+      {label:"Geral (600)", base:94.8, vals:[{v:94.4,c:"--accent"},{v:94.4,c:"--warn"}]},
+      {label:"CSIRT regional", vals:[{v:100.0,c:"--accent"},{v:99.1,c:"--warn"}]},
+      {label:"CAIS/RNP", vals:[{v:92.2,c:"--accent"},{v:88.6,c:"--warn"}]}
+    ]
+  });
+  dots(document.getElementById("c2"), {
+    min:70, max:80, step:2,
+    rows:[
+      {label:"TF-IDF + reg. log.", vals:[{v:77.0,c:"--muted"},{v:76.2,c:"--accent"}]},
+      {label:"BERT", vals:[{v:78.3,c:"--muted"},{v:78.1,c:"--accent"}]}
+    ]
+  });
+
+  // Animações: reexecutar o desfazer das tarjas e o fluxo
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var flow = document.getElementById("flow");
+  function replay(){
+    if (reduce) return;
+    var nodes = document.querySelectorAll("#tk .r, #stamps .stamp");
+    nodes.forEach(function(n){ n.style.animation = "none"; void n.offsetWidth; n.style.animation = ""; });
+    flow.classList.remove("play"); void flow.offsetWidth; flow.classList.add("play");
+  }
+  document.getElementById("replay").addEventListener("click", replay);
+  if (!reduce) flow.classList.add("play");
+})();
+</script>
+</body>
+</html>
