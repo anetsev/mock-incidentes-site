@@ -159,7 +159,7 @@ nav a.cta:hover{background:var(--btn-h)}
   .cmp thead{display:none}
   .cmp tbody{display:block}
   .cmp tbody tr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 .45rem;padding:.75rem 0;border-bottom:1px solid var(--border)}
-  .cmp td{min-width:0;overflow-wrap:anywhere}
+  .cmp td{min-width:0;overflow-wrap:break-word}
   .cmp tbody tr:last-child{border-bottom:0}
   .cmp tbody th{grid-column:1/-1;padding:0 0 .5rem;border:0;position:static;background:transparent}
   .cmp td{padding:.4rem .5rem;border:0;border-radius:var(--r-sm);font-size:.98rem}
@@ -197,7 +197,7 @@ table{border-collapse:collapse;width:100%;font-size:.92rem}
 .chart table.twin thead th{font:600 .68rem var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .tip{position:fixed;z-index:30;pointer-events:none;background:var(--text);color:var(--bg);font:500 .76rem var(--mono);padding:.35rem .55rem;border-radius:var(--r-sm);box-shadow:0 6px 20px rgba(0,0,0,.25);white-space:nowrap}
 .data{margin-top:1rem;font-size:.86rem}
-.data th,.data td{padding:.45rem .6rem;border-bottom:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.data th,.data td{padding:.45rem .6rem;border-bottom:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;overflow-wrap:break-word}
 .data small{display:block;font:400 .72rem var(--mono);color:var(--muted)}
 .data th:first-child,.data td:first-child{text-align:left}
 .data thead th{font:600 .68rem var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:right}
@@ -239,3 +239,11 @@ footer{border-top:1px solid var(--border);margin-top:88px;padding:1.6rem 0;font-
 footer .wrap{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
 footer b{color:var(--accent)}
 footer .fine{font:.74rem var(--mono);color:var(--muted)}
+
+@media (max-width:560px){
+  .cmp tbody tr{grid-template-columns:1fr;gap:.4rem 0}
+  .cmp td{display:grid;grid-template-columns:auto 1fr;gap:0 .6rem;align-items:baseline}
+  .cmp td::before{margin:0;align-self:center}
+  .cmp td small{grid-column:2}
+  .tiles{grid-template-columns:1fr}
+}

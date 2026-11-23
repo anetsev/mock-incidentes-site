@@ -140,7 +140,7 @@
 
   function plot(spec, W, H) {
     const series = spec.series;
-    const padL = 44, padR = 8, padT = 16, padB = 34;
+    const padL = 44, padR = 8, padT = 16, padB = 40;
     const plotW = W - padL - padR, plotH = H - padT - padB;
     const slot = plotW / spec.cats.length;
     const gap = 2, barW = Math.min(22, (slot * 0.66 - gap * (series.length - 1)) / series.length);
@@ -154,14 +154,17 @@
     spec.cats.forEach((c, i) => {
       const gx = padL + slot * i + (slot - groupW) / 2, cx = padL + slot * i + slot / 2;
       const name = catName(spec, c), short = name.replace('mistral-small', 'mistral').replace('gpt-oss', 'gpt-oss');
-      cats += `<text class="cat" x="${cx}" y="${H - 8}" text-anchor="middle">${short}</text>`;
+      if (slot < 86 && short.includes(':')) {   // tela estreita: nome e tamanho em duas linhas
+        const [fam, size] = short.split(':');
+        cats += `<text class="cat" x="${cx}" y="${H - 18}" text-anchor="middle">${fam}<tspan x="${cx}" dy="12">${size}</tspan></text>`;
+      } else cats += `<text class="cat" x="${cx}" y="${H - 8}" text-anchor="middle">${short}</text>`;
       const parts = [];
       series.forEach((s, k) => {
         const v = spec.values[s.key][i], x = gx + k * (barW + gap);
         if (v == null) return;
         const tp = y(v);
         bars += bar(x, tp, barW, padT + plotH - tp, s.key);
-        if (s.key === spec.labelKey) labels += `<text class="val" x="${x + barW / 2}" y="${tp - 5}" text-anchor="middle">${fmt(v, spec.dec)}</text>`;
+        if (s.key === spec.labelKey && barW >= 11) labels += `<text class="val" x="${x + barW / 2}" y="${tp - 5}" text-anchor="middle">${fmt(v, spec.dec)}</text>`;
         parts.push(`${s.name()} ${fmt(v, spec.dec)}${spec.unit}`);
       });
       hits.push({ x: gx - gap, w: groupW + gap * 2, text: `${name}: ${parts.join(' · ')}` });
