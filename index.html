@@ -1,500 +1,261 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mock Publicável de Incidentes</title>
-<meta name="description" content="600 incidentes de segurança, 12 categorias NIST, nenhum identificador real. Um mock verificado e validado como artefato reprodutível. LEAS 2026.2, Unipampa.">
+<title>Mock600 · Mock publicável de incidentes de segurança</title>
+<meta name="description" content="Mock600: 600 notificações de incidentes de segurança em 12 categorias NIST, construídas a partir de registros reais que não podem ser publicados. Identificadores substituídos, texto preservado, verificação pública e validação com classificadores de LLM. Mestrado Profissional em Engenharia de Software, UNIPAMPA.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-/* Plano: um chamado de incidente é o objeto central. Identificadores aparecem como tarjas e
-   se resolvem em valores fictícios (faixas de documentação das RFCs). Marca-texto âmbar = substituição.
-   Layout: coluna de leitura de ~68ch, com blocos largos para o chamado, os gráficos e a linha do tempo. */
-:root{
-  --paper:#f4f5f2;
-  --surface:#ffffff;
-  --ink:#16202a;
-  --muted:#5b6670;
-  --rule:#d9ddd8;
-  --mark:#f2c14e;
-  --mark-ink:#5a3d00;
-  --accent:#1f5f8b;
-  --ok:#2e7d4f;
-  --warn:#b7791f;
-  --pend:#8a8f96;
-  --redact:#16202a;
-  --display:"Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
-  --body:"IBM Plex Sans", "Segoe UI", Roboto, Arial, sans-serif;
-  --mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
-  color-scheme: light;
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --paper:#11171d; --surface:#18212a; --ink:#e7ebee; --muted:#9aa6b1; --rule:#2a3540;
-    --mark:#e0b041; --mark-ink:#1d1400; --accent:#6fb3e0; --ok:#5cc08a; --warn:#e0a84a; --pend:#7d8792;
-    --redact:#e7ebee; color-scheme: dark;
-  }
-}
-:root[data-theme="dark"]{
-  --paper:#11171d; --surface:#18212a; --ink:#e7ebee; --muted:#9aa6b1; --rule:#2a3540;
-  --mark:#e0b041; --mark-ink:#1d1400; --accent:#6fb3e0; --ok:#5cc08a; --warn:#e0a84a; --pend:#7d8792;
-  --redact:#e7ebee; color-scheme: dark;
-}
-*{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--paper);color:var(--ink);font:400 17px/1.6 var(--body)}
-a{color:var(--accent)}
-a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
-.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
-.read{max-width:68ch}
-h1,h2,h3{font-family:var(--display);line-height:1.08;text-wrap:balance;margin:0}
-h2{font-size:clamp(1.7rem,3.4vw,2.4rem);font-weight:800;letter-spacing:-.01em}
-h3{font-size:1.15rem;font-weight:700}
-p{margin:0}
-section{padding:64px 0;border-top:1px solid var(--rule)}
-.kicker{font:500 .78rem/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
-.stack{display:grid;gap:18px}
-.lede{font-size:1.15rem;color:var(--muted)}
-.num{font-variant-numeric:tabular-nums}
-
-/* Topo */
-header.top{padding:22px 0 0}
-.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font:500 .8rem/1 var(--mono);color:var(--muted)}
-.hero{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center;padding:44px 0 56px}
-.hero h1{font-size:clamp(2.6rem,6.4vw,4.6rem);font-weight:800;letter-spacing:-.025em}
-.hero h1 .hl{background:linear-gradient(transparent 58%,var(--mark) 58%);padding:0 .06em}
-.hero .lede{margin-top:20px;max-width:46ch}
-.facts{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}
-.chip{font:500 .8rem/1 var(--mono);border:1px solid var(--rule);background:var(--surface);padding:7px 10px;border-radius:999px}
-
-/* Chamado */
-.ticket{background:var(--surface);border:1px solid var(--rule);border-radius:10px;box-shadow:0 18px 40px -24px rgba(10,20,30,.35);font:400 .86rem/1.65 var(--mono);overflow:hidden}
-.ticket .bar{display:flex;justify-content:space-between;gap:10px;padding:10px 14px;border-bottom:1px solid var(--rule);color:var(--muted);font-size:.76rem}
-.ticket .body{padding:16px 16px 12px;overflow-x:auto}
-.ticket .row{white-space:pre-wrap;word-break:break-word}
-.ticket .k{color:var(--muted)}
-.sub{position:relative;display:inline-block;border-radius:3px;padding:0 3px}
-.sub .r{position:absolute;inset:2px 0;background:var(--redact);border-radius:2px;opacity:0;transform-origin:right;animation:unredact .5s ease backwards;animation-delay:var(--d)}
-.sub .v{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2px}
-@keyframes unredact{from{opacity:1;transform:none}to{opacity:1;transform:scaleX(0)}}
-.stamps{display:flex;gap:8px;align-items:center;padding:12px 14px;border-top:1px dashed var(--rule);flex-wrap:wrap}
-.stamp{font:700 .72rem/1 var(--mono);letter-spacing:.06em;border:1.5px solid currentColor;border-radius:6px;padding:6px 8px;animation:pop .35s ease backwards;animation-delay:var(--d)}
-.stamp.ok{color:var(--ok)} .stamp.pend{color:var(--pend);border-style:dashed}
-.stamp.check{color:var(--accent)}
-@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
-.replay{margin-left:auto;font:500 .74rem/1 var(--mono);background:none;border:1px solid var(--rule);color:var(--muted);border-radius:6px;padding:6px 8px;cursor:pointer}
-.replay:hover{color:var(--ink);border-color:var(--muted)}
-.legend-mini{font:400 .74rem/1.4 var(--mono);color:var(--muted);padding:0 14px 12px}
-
-/* Vídeo */
-.video{margin-top:-12px;aspect-ratio:16/9;max-width:640px;border-radius:10px;border:1px dashed var(--muted);display:grid;place-items:center;text-align:center;background:var(--surface);color:var(--muted);padding:20px}
-.video strong{display:block;font:700 1.2rem/1.2 var(--display);color:var(--ink);margin-bottom:6px}
-
-/* Cartões do problema */
-.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:28px}
-.card{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:18px;display:grid;gap:8px;align-content:start}
-.card .n{font:800 2rem/1 var(--display);color:var(--accent)}
-.card p{color:var(--muted);font-size:.95rem}
-
-/* Fluxo */
-.flow{display:grid;grid-template-columns:repeat(6,1fr);gap:0;margin-top:30px;counter-reset:f}
-.step{position:relative;padding:16px 14px 14px;border-top:3px solid var(--rule);display:grid;gap:6px;align-content:start}
-.step::before{counter-increment:f;content:"F" counter(f);font:500 .75rem/1 var(--mono);color:var(--muted)}
-.step h3{font-size:1.02rem}
-.step p{font-size:.88rem;color:var(--muted)}
-.step.on{border-top-color:var(--accent)}
-.flow.play .step{animation:lit 3.6s ease both;animation-delay:calc(var(--i) * .45s)}
-@keyframes lit{0%{border-top-color:var(--rule)}20%,100%{border-top-color:var(--accent)}}
-
-/* Exemplo */
-.pair{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:26px}
-.pane{background:var(--surface);border:1px solid var(--rule);border-radius:10px;overflow:hidden}
-.pane .h{padding:10px 14px;border-bottom:1px solid var(--rule);font:500 .76rem/1 var(--mono);color:var(--muted);display:flex;justify-content:space-between}
-.pane pre{margin:0;padding:14px;font:400 .82rem/1.65 var(--mono);white-space:pre-wrap;word-break:break-word}
-.hide{background:var(--redact);color:transparent;border-radius:2px;user-select:none}
-.mk{background:var(--mark);color:var(--mark-ink);border-radius:2px;padding:0 2px}
-.note{font-size:.88rem;color:var(--muted);margin-top:12px}
-
-/* Números grandes */
-.big{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:28px}
-.big div{border-left:3px solid var(--accent);padding:4px 0 4px 14px}
-.big b{display:block;font:800 clamp(2rem,4.4vw,3rem)/1 var(--display);font-variant-numeric:tabular-nums}
-.big span{font-size:.9rem;color:var(--muted)}
-
-/* Gráficos */
-.charts{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:30px}
-figure{margin:0;background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:18px}
-figcaption{font-size:.9rem;color:var(--muted);margin-top:10px}
-figure h3{margin-bottom:12px}
-svg text{font-family:var(--mono);fill:var(--muted);font-size:11px}
-svg .lab{fill:var(--ink);font-family:var(--body);font-size:12.5px}
-svg .val{fill:var(--ink);font-weight:500}
-.key{display:flex;gap:14px;flex-wrap:wrap;font:400 .78rem/1 var(--mono);color:var(--muted);margin-bottom:8px}
-.key i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
-.comp{display:flex;height:34px;border-radius:6px;overflow:hidden;margin-top:6px}
-.comp div{display:grid;place-items:center;font:500 .78rem/1 var(--mono);color:#fff;white-space:nowrap;overflow:hidden}
-.comp-legend{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px;font-size:.88rem}
-.comp-legend b{display:block;font:700 1.3rem/1.1 var(--display)}
-
-/* Linha do tempo */
-.tl{margin-top:26px;border:1px solid var(--rule);border-radius:10px;background:var(--surface);overflow-x:auto}
-.tl table{width:100%;border-collapse:collapse;font-size:.92rem;min-width:640px}
-.tl th,.tl td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--rule);vertical-align:top}
-.tl th{font:500 .74rem/1 var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
-.tl tr:last-child td{border-bottom:0}
-.tl td:first-child{font-family:var(--mono);white-space:nowrap;color:var(--muted)}
-.pill{display:inline-block;font:500 .72rem/1 var(--mono);padding:5px 8px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
-.pill.ok{color:var(--ok)} .pill.run{color:var(--warn)} .pill.pend{color:var(--pend);border-style:dashed}
-
-/* Papéis */
-.roles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:26px}
-.role{border-top:3px solid var(--ink);padding-top:14px;display:grid;gap:8px}
-.role p{color:var(--muted);font-size:.95rem}
-
-/* Limites */
-details{border-bottom:1px solid var(--rule);padding:14px 0}
-details:first-of-type{border-top:1px solid var(--rule)}
-summary{cursor:pointer;font-weight:600;list-style:none;display:flex;gap:10px;align-items:baseline}
-summary::-webkit-details-marker{display:none}
-summary::before{content:"+";font:500 1rem/1 var(--mono);color:var(--accent);width:1ch}
-details[open] summary::before{content:"−"}
-details p{margin-top:10px;color:var(--muted)}
-.limits{margin-top:24px}
-
-/* Rodapé */
-footer{border-top:1px solid var(--rule);padding:40px 0 60px;font-size:.92rem;color:var(--muted)}
-.foot{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-.foot h3{color:var(--ink);margin-bottom:8px;font-size:1rem}
-.badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
-
-@media (max-width:900px){
-  .hero{grid-template-columns:1fr;gap:30px}
-  .cards{grid-template-columns:1fr 1fr}
-  .flow{grid-template-columns:repeat(3,1fr);row-gap:16px}
-  .charts,.pair{grid-template-columns:1fr}
-  .big{grid-template-columns:1fr 1fr}
-  .roles,.foot{grid-template-columns:1fr}
-}
-@media (max-width:440px){
-  .cards,.big,.flow{grid-template-columns:1fr}
-  .comp-legend{grid-template-columns:1fr}
-  body{font-size:16px}
-}
-@media (prefers-reduced-motion: reduce){
-  .sub .r{display:none}
-  .stamp,.flow.play .step{animation:none}
-  .step{border-top-color:var(--accent)}
-}
-</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{const s=localStorage.getItem('theme');if(s==='light'||s==='dark')document.documentElement.dataset.theme=s;const l=localStorage.getItem('lang');if(l==='en')document.documentElement.lang='en'}catch(e){}</script>
 </head>
 <body>
-
-<header class="top">
-  <div class="wrap topbar">
-    <span>LEAS 2026.2 · Unipampa · PPGES</span>
-    <span>Alex Sandre Pinheiro Severo</span>
-  </div>
-  <div class="wrap hero">
-    <div>
-      <div class="kicker">Artefato reprodutível · Avaliação de artefatos e de LLMs</div>
-      <h1>Seiscentos incidentes. <span class="hl">Nenhum identificador real.</span></h1>
-      <p class="lede">Uma base de incidentes de segurança que pode ser publicada: os relatos continuam os mesmos, e tudo o que identifica alguém foi trocado por valores fictícios. Depois, verificamos que nada vazou e que os classificadores tratam a cópia como tratam o original.</p>
-      <div class="facts">
-        <span class="chip">600 casos</span>
-        <span class="chip">12 categorias NIST × 50</span>
-        <span class="chip">3 origens</span>
-        <span class="chip">0 falhas na verificação</span>
-      </div>
-    </div>
-
-    <div class="ticket" aria-label="Exemplo ilustrativo de um chamado transformado">
-      <div class="bar"><span>INC-0417 · CAT4 · exemplo ilustrativo</span><span>mock</span></div>
-      <div class="body" id="tk">
-        <div class="row"><span class="k">De:      </span><span class="sub" style="--d:.5s"><span class="v">cert@csirt001.example.org</span><span class="r"></span></span></div>
-        <div class="row"><span class="k">Enviado: </span><span class="sub" style="--d:.8s"><span class="v">qui, 14 jan 2027 09:12</span><span class="r"></span></span></div>
-        <div class="row"><span class="k">Origem:  </span><span class="sub" style="--d:1.1s"><span class="v">203.0.113.47</span><span class="r"></span></span><span class="k"> · AS</span><span class="sub" style="--d:1.3s"><span class="v">64512</span><span class="r"></span></span></div>
-        <div class="row">&nbsp;</div>
-        <div class="row">Recebemos notificação de varredura SSH a partir de um host da sua rede (<span class="sub" style="--d:1.6s"><span class="v">srv-07.campus.example.edu</span><span class="r"></span></span>), com mais de 4 mil tentativas de login em 20 minutos. Solicitamos verificação e retorno pelo chamado <span class="sub" style="--d:1.9s"><span class="v">SGI001-2027-00318</span><span class="r"></span></span>.</div>
-      </div>
-      <div class="stamps" id="stamps">
-        <span class="stamp check" style="--d:2.4s">VERIFICADO</span>
-        <span class="stamp ok" style="--d:2.8s">F</span>
-        <span class="stamp ok" style="--d:3.0s">S</span>
-        <span class="stamp ok" style="--d:3.2s">R</span>
-        <span class="stamp pend" style="--d:3.4s">D · pendente</span>
-        <button class="replay" id="replay" type="button">Repetir</button>
-      </div>
-      <p class="legend-mini">Texto inventado para ilustrar. Em âmbar, os valores fictícios: faixas reservadas das RFCs, domínios example, ASN privado e ano 2027.</p>
-    </div>
+<a class="skip" href="#main" data-i18n="skip">Pular para o conteúdo</a>
+<header class="top" id="top">
+  <div class="wrap">
+    <a class="brand" href="#" aria-label="Mock600"><img class="on-dark" src="assets/logo-dark.png" alt="Mock600" width="640" height="163"><img class="on-light" src="assets/logo.png" alt="Mock600" width="640" height="163"></a>
+    <button class="menu" id="menu" type="button" aria-expanded="false" aria-controls="nav" aria-label="Menu">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path class="i1" d="M4 7h16M4 12h16M4 17h16"/><path class="i2" d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <nav id="nav">
+      <a href="#problema" data-i18n="nav_problem">Problema</a>
+      <a href="#como" data-i18n="nav_how">Como funciona</a>
+      <a href="#metodo" data-i18n="nav_method">Método</a>
+      <a href="#resultados" data-i18n="nav_results">Resultados</a>
+      <a href="#entregas" data-i18n="nav_tasks">Entregas</a>
+      <a href="#equipe" data-i18n="nav_team">Equipe</a>
+      <span class="ctrl">
+        <span class="lang" role="group" aria-label="Idioma">
+          <button type="button" data-lang="pt-BR" aria-pressed="true">PT</button><button type="button" data-lang="en" aria-pressed="false">EN</button>
+        </span>
+        <button class="theme" id="theme" type="button" aria-label="Tema claro ou escuro">
+          <svg class="sun" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+          <svg class="moon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        </button>
+      </span>
+      <a class="cta" href="https://github.com/anetsev/mock-incidentes-site" target="_blank" rel="noopener">GitHub ↗</a>
+    </nav>
   </div>
 </header>
 
-<div class="wrap" style="padding-bottom:48px">
-  <div class="video" role="img" aria-label="Espaço do vídeo do projeto">
-    <div><strong>Vídeo de 2 a 3 minutos</strong>Em produção. Ele vai aparecer aqui, no topo da página.</div>
-  </div>
-</div>
-
-<section>
+<main id="main">
+<section class="hero">
   <div class="wrap">
-    <div class="kicker">O problema</div>
-    <h2>Uma base que não pode sair não pode ser reproduzida</h2>
-    <div class="cards">
-      <div class="card"><span class="n">194</span><h3>Incidentes reais</h3><p>Notificações de um CSIRT regional, usadas nos artigos de 2025. Não podem ser publicadas.</p></div>
-      <div class="card"><span class="n">0</span><h3>Reproduções possíveis</h3><p>Sem a base, ninguém repete os experimentos de classificação com LLM.</p></div>
-      <div class="card"><span class="n">2</span><h3>Provas exigidas</h3><p>Que nada identifica ninguém, e que o substituto se comporta como o original.</p></div>
-      <div class="card"><span class="n">4</span><h3>Selos em jogo</h3><p>Disponível, Funcional, Sustentável e Reprodutível, como na avaliação de artefatos do SBSeg.</p></div>
+    <p class="kick" data-i18n="hero_kick">Mestrado Profissional em Engenharia de Software · PPGES · UNIPAMPA · 2026</p>
+    <h1 data-i18n="hero_h1">Seiscentos incidentes reais que podem ser publicados: o que identifica saiu, o relato ficou.</h1>
+    <p class="lead" data-i18n="hero_lead">O Mock600 é uma base de 600 notificações de incidentes de segurança em 12 categorias da NIST SP 800-61, construída a partir de registros reais que não podem ser divulgados. Os identificadores foram substituídos por valores fictícios consistentes e o texto foi preservado. Uma bateria pública de verificação e uma validação com classificadores baseados em LLM mostram que, para o classificador, o <em>mock</em> é o mesmo incidente que o original.</p>
+    <p class="authors">Alex Sandre Pinheiro Severo · <span data-i18n="hero_adv">orientação</span>: Diego Kreutz</p>
+    <div class="actions">
+      <a class="btn btn-primary" href="#resultados" data-i18n="hero_cta">Ver resultados</a>
+      <a class="btn btn-ghost" href="#como" data-i18n="hero_cta2">Como funciona</a>
+      <span class="btn btn-muted" title="O repositório do dataset e do código abre após as autorizações escritas das fontes" data-i18n="hero_soon">Dataset e código: em breve</span>
+    </div>
+    <div class="stats" aria-label="Números do projeto">
+      <div class="stat"><b>600</b><span data-i18n="st_cases">incidentes, 50 por categoria, 12 categorias NIST</span></div>
+      <div class="stat"><b>325</b><span data-i18n="st_transf">registros transformados; os 275 da VCDB são públicos e ficam intactos</span></div>
+      <div class="stat"><b>0</b><span data-i18n="st_fail">falhas em 30 testes de privacidade e fidelidade, em dois modos</span></div>
+      <div class="stat"><b>7</b><span data-i18n="st_models">classificadores de LLM: acurácia equivalente nas duas bases em todos</span></div>
     </div>
   </div>
 </section>
 
-<section>
+<section class="block" id="problema">
   <div class="wrap">
-    <div class="kicker">O método</div>
-    <h2>Do chamado real ao pacote com selos, em seis fases</h2>
-    <div class="flow" id="flow">
-      <div class="step" style="--i:0"><h3>Higiene</h3><p>Classificar cada arquivo em público, condicional ou interno.</p></div>
-      <div class="step" style="--i:1"><h3>Normalização</h3><p>Três origens no mesmo formato: 12 categorias × 50 casos.</p></div>
-      <div class="step" style="--i:2"><h3>Rotulagem</h3><p>Gabarito por categoria NIST, validado por especialista.</p></div>
-      <div class="step" style="--i:3"><h3>Substituição</h3><p>Identificadores por HMAC, IPs e domínios de documentação, datas deslocadas.</p></div>
-      <div class="step" style="--i:4"><h3>Verificação</h3><p>Testes de estrutura e de vazamento, com e sem acesso ao original.</p></div>
-      <div class="step" style="--i:5"><h3>Validação</h3><p>Os mesmos classificadores no original e no mock. Comparar.</p></div>
+    <p class="kick" data-i18n="pb_kick">O problema</p>
+    <h2 data-i18n="pb_h2">Uma base que não pode sair não pode ser reproduzida.</h2>
+    <div class="grid3">
+      <div class="card"><div class="n">1</div><h3 data-i18n="pb1_h">Os dados reais não saem</h3><p data-i18n="pb1_p">As 194 notificações de um CSIRT regional usadas nos artigos de 2025 descrevem incidentes de instituições reais. Não podem ser publicadas, então ninguém de fora reproduz os resultados de classificação.</p></div>
+      <div class="card"><div class="n">2</div><h3 data-i18n="pb2_h">Anonimizar não basta</h3><p data-i18n="pb2_p">A anonimização original trocava identificadores por marcadores reversíveis e deixava datas, nomes de equipes, telefones e números de chamado. Publicar isso ainda identifica.</p></div>
+      <div class="card"><div class="n">3</div><h3 data-i18n="pb3_h">Inventar texto perde o sinal</h3><p data-i18n="pb3_p">Um dataset sintético gerado por LLM perde os modelos de notificação, os marcadores de categoria e o ruído real. O classificador avaliado nele não é o classificador avaliado na base real.</p></div>
     </div>
-    <details style="margin-top:22px">
-      <summary>O que exatamente é trocado</summary>
-      <p>Nomes de pessoas e de equipes, domínios, endereços IPv4, ASN, e-mails, telefones, CNPJ, números de chamado e datas. Endereços vão para as faixas reservadas (RFC 5737), domínios para example.* (RFC 2606), o ASN para 64512 (RFC 6996) e todas as datas para 2027 ou depois, mantendo a ordem e os intervalos dentro de cada incidente. A troca usa uma chave HMAC que fica fora do repositório, então o mesmo valor real vira sempre o mesmo valor fictício, mas o caminho de volta exige o original.</p>
-    </details>
+    <div class="objective">
+      <div>
+        <p class="kick" data-i18n="ob_kick">Objetivo</p>
+        <h3 data-i18n="ob_h">Trocar só o que identifica.</h3>
+        <p data-i18n="ob_p">Cada identificador recebe um valor fictício consistente (o mesmo valor real vira sempre o mesmo fictício, via HMAC com chave fora do repositório); as datas são deslocadas por semanas inteiras; o restante do texto não muda.</p>
+        <div class="chips">
+          <span class="chip" data-i18n="f_dom">domínios</span><span class="chip">IPs</span><span class="chip">e-mails</span><span class="chip">URLs</span><span class="chip" data-i18n="f_date">datas</span><span class="chip" data-i18n="f_phone">telefones</span><span class="chip" data-i18n="f_doc">documentos</span><span class="chip" data-i18n="f_person">nomes de pessoas</span><span class="chip" data-i18n="f_team">nomes de equipes</span><span class="chip" data-i18n="f_ticket">números de chamado</span><span class="chip">DKIM</span>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="pane"><div class="ph" data-i18n="pane_orig">Original · exemplo inventado</div><pre>De: CSIRT <i>Universidade Fictícia</i>
+&lt;<i>suporte@universidade-ficticia.edu.br</i>&gt;
+Data: <i>Mar 3, 2024</i> 9:10 AM
+Chamado <i>RNP2025-123456</i>
+
+O host <i>198.51.100.77</i> gerou tráfego
+de UDP flood contra terceiros entre
+02:00 e 03:15 UTC em <i>2024-03-01</i>.
+Favor investigar.</pre></div>
+        <div class="pane"><div class="ph" data-i18n="pane_mock">Mock · mesmo relato</div><pre>De: <b>CSIRT-RUEP</b>
+&lt;<b>[EMAIL_ADDRESS_5e5198225d]</b>&gt;
+Data: <b>Mar 7, 2027</b> 9:10 AM
+Chamado <b>20270301-07</b>
+
+O host <b>198.51.100.77</b> gerou tráfego
+de UDP flood contra terceiros entre
+02:00 e 03:15 UTC em <b>2027-03-01</b>.
+Favor investigar.</pre></div>
+      </div>
+    </div>
+    <p class="caption" data-i18n="ob_cap">Exemplo inventado para ilustrar (não é um registro da base): o relato, os horários e os intervalos entre datas ficam; nomes, e-mails, datas e número de chamado mudam. Endereços de documentação (RFC 5737) já são fictícios e são mantidos.</p>
   </div>
 </section>
 
-<section>
+<section class="block" id="como">
   <div class="wrap">
-    <div class="kicker">Entrada e saída</div>
-    <h2>O relato fica. O que identifica, sai.</h2>
-    <div class="pair">
-      <div class="pane">
-        <div class="h"><span>Entrada · base original</span><span>valores ocultos</span></div>
-<pre>Assunto: Phishing hospedado em <span class="hide">xxxxxxxxxxxxxxxx</span>
-Enviado: <span class="hide">xxxxxxxxxxxxxxxxxxxxx</span>
-
-Identificamos página falsa de login de webmail
-em http://<span class="hide">xxxxxxxxxxxxxxxxxxxx</span>/conta/, no endereço
-<span class="hide">xxxxxxxxxxxx</span>. A página coleta usuário e senha
-e reenvia para <span class="hide">xxxxxxxxxxxxxxxxxxx</span>.
-Contato do responsável: <span class="hide">xxxxxxxxxxxxx</span>.</pre>
-      </div>
-      <div class="pane">
-        <div class="h"><span>Saída · mock publicado</span><span>CAT6</span></div>
-<pre>Assunto: Phishing hospedado em <span class="mk">portal.example.net</span>
-Enviado: <span class="mk">ter, 09 mar 2027 16:40</span>
-
-Identificamos página falsa de login de webmail
-em http://<span class="mk">portal.example.net</span>/conta/, no endereço
-<span class="mk">198.51.100.23</span>. A página coleta usuário e senha
-e reenvia para <span class="mk">coleta@example.com</span>.
-Contato do responsável: <span class="mk">+55 51 5550-1234</span>.</pre>
-      </div>
-    </div>
-    <p class="note">Exemplo inventado, com a mesma forma de um registro real. O original nunca sai do servidor; por isso a entrada aparece com os valores ocultos.</p>
+    <p class="kick" data-i18n="how_kick">Como funciona</p>
+    <h2 data-i18n="how_h2">Do chamado real ao pacote verificado, em seis fases.</h2>
+    <p class="sub" data-i18n="how_sub">O original fica cifrado e nunca sai do servidor. Tudo o que é publicado passa por uma bateria de verificação que um terceiro reexecuta sem acesso ao original.</p>
+    <ol class="steps">
+      <li><span class="n">01</span><div><h3 data-i18n="s1_h">Higiene</h3><p data-i18n="s1_p">Separar o que pode sair do que não pode: mapa de sigilo da pasta, manifesto com hashes, original cifrado e chave de substituição guardada fora do repositório.</p></div></li>
+      <li><span class="n">02</span><div><h3 data-i18n="s2_h">Normalização</h3><p data-i18n="s2_p">Três origens num só esquema de 14 colunas: 106 casos do CSIRT regional, 219 do CAIS/RNP de 2025 e 275 da VCDB. Idioma por registro, grupos de similaridade e 50 casos por categoria.</p></div></li>
+      <li><span class="n">03</span><div><h3 data-i18n="s3_h">Rotulagem</h3><p data-i18n="s3_p">Gabarito em 12 categorias NIST com protocolo caso a caso, dois pilotos, adjudicação das divergências e tradução das regras da fonte para a taxonomia.</p></div></li>
+      <li><span class="n">04</span><div><h3 data-i18n="s4_h">Substituição</h3><p data-i18n="s4_p">O gerador troca cada classe de identificador por um valor fictício consistente, desloca as datas por semanas inteiras para 2027 e usa um dicionário semântico para nomes institucionais. O texto ao redor não muda.</p></div></li>
+      <li><span class="n">05</span><div><h3 data-i18n="s5_h">Verificação</h3><p data-i18n="s5_p">Programa independente do gerador, com 30 testes em dois modos: o público (estrutura e vazamento por padrão) roda só com o <em>mock</em>; o interno (tokens, valores reais, datas, fidelidade por registro) roda com o original e publica só contagens.</p></div></li>
+      <li><span class="n">06</span><div><h3 data-i18n="s6_h">Validação</h3><p data-i18n="s6_p">Classificadores de LLM recebem original e <em>mock</em> nas mesmas condições: um modelo comercial, 21 modelos locais e um classificador determinístico. Compara-se a categoria registro a registro e contra o gabarito, com teste pareado.</p></div></li>
+    </ol>
+    <div class="note"><b data-i18n="how_note_b">Nada do original sai do servidor:</b> <span data-i18n="how_note">os classificadores rodam onde o original está, e o que se publica são os rótulos por registro das duas bases, as saídas dos modelos sobre o <em>mock</em> e os agregados.</span></div>
   </div>
 </section>
 
-<section>
+<section class="block" id="metodo">
   <div class="wrap">
-    <div class="kicker">Resultados</div>
-    <h2>Trocar a base muda tanto quanto rodar o modelo de novo</h2>
-    <div class="big">
-      <div><b class="num">94,4%</b><span>concordância original × mock nos 600 casos</span></div>
-      <div><b class="num">94,8%</b><span>concordância do original consigo mesmo</span></div>
-      <div><b class="num">0</b><span>falhas nos testes de vazamento</span></div>
-      <div><b class="num">37</b><span>testes automatizados no repositório</span></div>
-    </div>
-
-    <div class="charts">
-      <figure>
-        <h3>Concordância de categoria, por origem</h3>
-        <div class="key"><span><i style="background:var(--accent)"></i>PHP</span><span><i style="background:var(--warn)"></i>SHP</span><span><i style="background:transparent;border:1.5px dashed var(--muted)"></i>original × original</span></div>
-        <svg id="c1" viewBox="0 0 460 210" width="100%" role="img" aria-label="Gráfico de concordância por origem"></svg>
-        <figcaption>SecLINC com Gemini 3.6 Flash, 3 repetições. PHP e SHP são técnicas de prompt. Escala de 80 a 100%.</figcaption>
-      </figure>
-      <figure>
-        <h3>Treinar no mock, testar no original</h3>
-        <div class="key"><span><i style="background:var(--muted)"></i>treino e teste no original</span><span><i style="background:var(--accent)"></i>treino no mock, teste no original</span></div>
-        <svg id="c2" viewBox="0 0 460 210" width="100%" role="img" aria-label="Gráfico de acurácia TSTR"></svg>
-        <figcaption>Acurácia média em 5 dobras. Escala de 70 a 80%. Diferenças abaixo de 1 ponto, com desvio entre dobras perto de 10.</figcaption>
-      </figure>
-    </div>
-
-    <figure style="margin-top:18px">
-      <h3>De onde vêm os 600 casos</h3>
-      <div class="comp" role="img" aria-label="Composição por origem">
-        <div style="flex:106;background:var(--accent)">106</div>
-        <div style="flex:219;background:#3f8a6e">219</div>
-        <div style="flex:275;background:var(--pend)">275</div>
+    <p class="kick" data-i18n="me_kick">Método</p>
+    <h2 data-i18n="me_h2">Original e mock passam pela mesma prova.</h2>
+    <p class="sub" data-i18n="me_sub">Cada classificador recebe as duas bases nas mesmas condições. A VCDB, cujo texto é idêntico nas duas, mede quanto o próprio classificador varia quando a entrada não muda; é o controle.</p>
+    <div class="grid2">
+      <div class="card">
+        <h3 data-i18n="me_data_h">De onde vêm os 600 casos</h3>
+        <div class="tiles">
+          <div class="tile"><b>106</b><span data-i18n="me_t1">CSIRT regional, transformados</span></div>
+          <div class="tile"><b>219</b><span data-i18n="me_t2">CAIS/RNP 2025, transformados</span></div>
+          <div class="tile"><b>275</b><span data-i18n="me_t3">VCDB, texto público mantido</span></div>
+        </div>
+        <div class="chart" id="chart-origem"></div>
+        <p class="caption" data-i18n="me_cap">Concordância original × <em>mock</em> por origem, a temperatura 0, para os seis modelos locais na base de 600. Na VCDB o texto é o mesmo nas duas bases.</p>
       </div>
-      <div class="comp-legend">
-        <div><b class="num">106</b>CSIRT regional, transformados</div>
-        <div><b class="num">219</b>CAIS/RNP 2025, transformados</div>
-        <div><b class="num">275</b>VCDB, pública, texto mantido</div>
+      <div class="card">
+        <h3 data-i18n="me_models_h">Três classificadores, a mesma prova</h3>
+        <ul class="models">
+          <li><i class="sw orig"></i><div><b data-i18n="m_cloud">Comercial</b><span data-i18n="m_cloud_p">Gemini 3.6 Flash via SecLINC, com três técnicas de <em>prompt</em> (PHP, SHP e HTP), nos 600 casos, três repetições intercaladas entre as bases.</span></div></li>
+          <li><i class="sw mock"></i><div><b data-i18n="m_local">Locais</b><span data-i18n="m_local_p">FrameworkPE sobre Ollama, técnica <em>progressive hint</em>: 21 modelos de 1 a 20 bilhões de parâmetros numa amostra de 48 casos; seis modelos de 4 a 24 bilhões na amostra de 240 e na base completa, a temperatura 0 e 0,7.</span></div></li>
+          <li><i class="sw ctrl"></i><div><b data-i18n="m_det">Determinístico</b><span data-i18n="m_det_p">TF-IDF com regressão logística, validação cruzada em cinco dobras por grupo de similaridade, treinado numa base e testado na outra (TSTR).</span></div></li>
+        </ul>
+        <p class="caption" data-i18n="me_test">Critérios fixados antes do cálculo: a linha de base é o classificador contra ele mesmo entre repetições; a acurácia contra o gabarito é comparada registro a registro (McNemar, <em>bootstrap</em>) e a equivalência é declarada pelo TOST com margem de 5 pontos.</p>
       </div>
-      <figcaption>Os 275 da VCDB já são públicos e funcionam como controle. O número que mede a transformação é o dos 325 casos das duas primeiras origens.</figcaption>
-    </figure>
+    </div>
   </div>
 </section>
 
-<section>
+<section class="block" id="resultados">
   <div class="wrap">
-    <div class="kicker">O semestre</div>
-    <h2>O combinado e o entregue</h2>
-    <div class="tl">
-      <table>
-        <thead><tr><th>Data</th><th>Combinado</th><th>Entregue</th><th>Situação</th></tr></thead>
+    <p class="kick" data-i18n="re_kick">Resultados</p>
+    <h2 data-i18n="re_h2">Trocar o original pelo mock muda tanto quanto rodar o modelo de novo.</h2>
+    <p class="sub" data-i18n="re_sub">A concordância original × <em>mock</em> fica no nível da linha de base entre repetições, e a acurácia contra o gabarito é equivalente nas duas bases com todos os classificadores.</p>
+
+    <div class="card compare">
+      <div class="cmphead"><h3 data-i18n="cmp_t">Os três classificadores lado a lado</h3><span class="caption" data-i18n="cmp_s">base de 600 · versão publicada do mock</span></div>
+      <table class="cmp">
+        <thead><tr>
+          <th></th>
+          <th><i class="sw orig"></i><span data-i18n="m_cloud">Comercial</span><small>Gemini 3.6 Flash · PHP</small></th>
+          <th class="hl"><span class="tag" data-i18n="cmp_tag">seis modelos nos 600</span><i class="sw mock"></i><span data-i18n="m_local">Locais</span><small>gemma3, qwen3, phi4, gpt-oss, mistral-small</small></th>
+          <th><i class="sw ctrl"></i><span data-i18n="m_det">Determinístico</span><small>TF-IDF + RL</small></th>
+        </tr></thead>
         <tbody>
-          <tr><td>08/11</td><td>Separar o que pode ser publicado</td><td>Mapa de sigilo da pasta e manifesto com hashes</td><td><span class="pill ok">entregue</span></td></tr>
-          <tr><td>10/11</td><td>Repositório com teste mínimo</td><td>Repositório privado, CI verde em ambiente limpo</td><td><span class="pill ok">entregue</span></td></tr>
-          <tr><td>11/11</td><td>Tarefas da disciplina</td><td>T1 (MedTracker), T2 (revisor) e T6 no Classroom</td><td><span class="pill ok">entregue</span></td></tr>
-          <tr><td>15/11</td><td>Mock verificado e validado</td><td>v1.0.0 em commit único; 0 falhas; validação nos 600</td><td><span class="pill ok">entregue</span></td></tr>
-          <tr><td>16/11</td><td>Apresentação ao professor</td><td>T4 em aula; apontamentos recebidos</td><td><span class="pill ok">entregue</span></td></tr>
-          <tr><td>16–17/11</td><td>Responder aos apontamentos</td><td>TSTR, varredura NER, ablação da queda no CAIS/RNP</td><td><span class="pill run">em andamento</span></td></tr>
-          <tr><td>até 23/11</td><td>Site e vídeo</td><td>Esta página; vídeo em produção</td><td><span class="pill run">em andamento</span></td></tr>
-          <tr><td>simulação final</td><td>Submeter ao sistema de avaliação da turma</td><td>Aguardando instruções</td><td><span class="pill pend">pendente</span></td></tr>
-          <tr><td>a definir</td><td>Repositório público e DOI</td><td>Depende de autorizações escritas das fontes</td><td><span class="pill pend">pendente</span></td></tr>
+          <tr><th><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg><span data-i18n="c_same">Mesma categoria, original × mock</span></th>
+            <td>96,0%<small data-i18n="c_same_s1">moda de 3 repetições</small></td><td class="hl">94,0–99,2%<small data-i18n="c_same_s2">T = 0, conforme o modelo</small></td><td>96,7%<small data-i18n="c_same_s3">99,3% sem identificadores e datas</small></td></tr>
+          <tr><th><svg viewBox="0 0 24 24"><path d="M4 17l5-5 4 4 7-7"/><path d="M14 9h6v6"/></svg><span data-i18n="c_base">Concordância por pares vs. linha de base</span></th>
+            <td>94,1% <small>vs. 94,8% (original × original)</small></td><td class="hl" data-i18n="c_base_l">−1,1 a +1,0 ponto<small>T = 0,7, cinco modelos; gemma3:4b −4,8</small></td><td>—</td></tr>
+          <tr><th><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 12h8M12 8v8"/></svg><span data-i18n="c_acc">Acurácia contra o gabarito, original → mock</span></th>
+            <td>75,5% → 74,5%</td><td class="hl">67,5% → 67,8%<small data-i18n="c_acc_s2">agregado dos seis, T = 0</small></td><td data-i18n="c_acc_det">&lt; 1 ponto<small>treinar numa base, testar na outra</small></td></tr>
+          <tr><th><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg><span data-i18n="c_tost">Equivalência (TOST, margem de 5 pontos)</span></th>
+            <td><span class="ok">✓ <span data-i18n="c_tost1">sim, nos 325 transformados</span></span></td><td class="hl"><span class="ok">✓ <span data-i18n="c_tost2">sim, em todos os modelos e temperaturas</span></span></td><td><span class="nope">—</span></td></tr>
+          <tr><th><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span data-i18n="c_runs">Execuções</span></th>
+            <td data-i18n="c_runs1">3 repetições × 2 bases</td><td class="hl" data-i18n="c_runs2">96 execuções, nenhuma com erro</td><td data-i18n="c_runs3">5 dobras × 4 combinações</td></tr>
         </tbody>
       </table>
     </div>
-  </div>
-</section>
 
-<section>
-  <div class="wrap">
-    <div class="kicker">Três papéis</div>
-    <h2>O mesmo tema visto como autor, revisor e analista</h2>
-    <div class="roles">
-      <div class="role"><h3>Autor</h3><p>Este mock, preparado para a trilha de artefatos com README nas seções exigidas, datasheet, licenças, Docker e CI.</p></div>
-      <div class="role"><h3>Revisor</h3><p>A experiência em comitê de avaliação de artefatos, e o que ela ensina sobre a conversa truncada entre avaliador anônimo e autores.</p></div>
-      <div class="role"><h3>Analista</h3><p>A análise do artefato MedTracker (SBRC 2026) com a mesma régua de selos aplicada aqui.</p></div>
+    <div class="grid2 charts">
+      <div class="card">
+        <h3 data-i18n="ch_acc_t">Acurácia contra o gabarito, por modelo</h3>
+        <p class="caption" data-i18n="ch_acc_s">Seis modelos locais na base de 600, temperatura 0: original e <em>mock</em> lado a lado. Barras quase iguais em todos; a maior diferença é a favor do <em>mock</em>.</p>
+        <div class="chart" id="chart-acc"></div>
+      </div>
+      <div class="card">
+        <h3 data-i18n="tb_ver_t">Bateria de verificação</h3>
+        <p class="caption" data-i18n="tb_ver_s">Resultado sobre o <em>dataset</em> publicado. Os grupos E e P rodam sem o original; I, R e F exigem o original e publicam só contagens.</p>
+        <table class="data" id="tb-ver">
+          <thead><tr><th data-i18n="tb_group">Grupo</th><th data-i18n="tb_tests">Testes</th><th data-i18n="tb_res">Resultado</th></tr></thead>
+          <tbody>
+            <tr><th data-i18n="g_e">Estrutura</th><td class="l">E01–E05</td><td>5/5 OK</td></tr>
+            <tr class="hl"><th data-i18n="g_p">Vazamento, público</th><td class="l">P01–P11, P08b</td><td>11/12 OK<small data-i18n="g_p_s"> · 1 informativo</small></td></tr>
+            <tr><th data-i18n="g_i">Vazamento, interno</th><td class="l">I01–I07</td><td>7/7 OK</td></tr>
+            <tr><th data-i18n="g_r">Reidentificação</th><td class="l">R01–R02</td><td>1/2 OK<small data-i18n="g_r_s"> · 1 informativo</small></td></tr>
+            <tr><th data-i18n="g_f">Fidelidade</th><td class="l">F01–F04</td><td>4/4 OK</td></tr>
+          </tbody>
+        </table>
+        <div class="finding">
+          <p><b data-i18n="fd1_b">Onde o mock difere.</b> <span data-i18n="fd1">Com o modelo comercial, a origem CAIS/RNP concorda 7 pontos menos que o controle, e a perda está numa só categoria (comprometimento de conta). A ablação localizou a causa nos nomes institucionais substituídos; a versão publicada usa nomes fictícios semânticos e reduz o efeito.</span></p>
+          <p><b data-i18n="fd2_b">Efeitos vêm em grupo, não dispersos.</b> <span data-i18n="fd2">Nos modelos locais, as diferenças que restam concentram-se em grupos de notificações-modelo: com mistral-small:24b, 15 dos 18 casos em que só o <em>mock</em> acerta são o mesmo modelo de texto de uma categoria.</span></p>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<section>
+<section class="block" id="entregas">
   <div class="wrap">
-    <div class="kicker">Limites declarados</div>
-    <h2>O que este trabalho não prova</h2>
-    <div class="limits read">
-      <details>
-        <summary>É pseudonimização, não dado sintético</summary>
-        <p>O texto de cada incidente é preservado e só os identificadores mudam. Chamamos de mock por substituição. Uma versão realmente sintética, com relatos novos, é extensão futura.</p>
-      </details>
-      <details>
-        <summary>A origem CAIS/RNP perde de 4 a 7 pontos</summary>
-        <p>Na maior origem transformada, a concordância cai para 92,2% (PHP) e 88,6% (SHP). A ablação apontou a causa: o classificador usava o nome do centro de origem como pista para separar duas categorias. Retirar essa troca recupera o efeito com PHP e reduz com SHP. A correção está em decisão.</p>
-      </details>
-      <details>
-        <summary>Um classificador principal</summary>
-        <p>O resultado nos 600 casos usa um modelo (Gemini 3.6 Flash via SecLINC). Os 21 modelos locais rodaram numa amostra de 48 casos; a ampliação para 240 está em andamento.</p>
-      </details>
-      <details>
-        <summary>O controle infla o número agregado</summary>
-        <p>Os 275 casos da VCDB têm o mesmo texto nas duas bases. Por isso os resultados também são reportados por origem.</p>
-      </details>
-      <details>
-        <summary>Publicação condicionada</summary>
-        <p>O repositório fica privado até as autorizações escritas das fontes e uma revisão de risco de reidentificação do texto livre. Só então sai o DOI, que é irreversível. O gabarito ainda pede um segundo anotador independente.</p>
-      </details>
+    <p class="kick" data-i18n="at_kick">Entregas</p>
+    <h2 data-i18n="at_h2">O projeto, entrega por entrega.</h2>
+    <p class="sub" data-i18n="at_sub">O combinado com o orientador e o que foi entregue, em ordem.</p>
+    <div class="tl-wrap">
+      <button type="button" class="tl-btn prev" id="tasks-prev" aria-label="Anteriores" disabled>‹</button>
+      <div class="tasks" id="tasks">
+      <div class="card task"><span class="phase done" data-i18n="ph_done">entregue</span><span class="n">08/11</span><h3 data-i18n="t1_h">Mapa de sigilo</h3><p data-i18n="t1_p">Separação do que pode ser publicado: mapa de sigilo da pasta do projeto e manifesto com hashes.</p></div>
+      <div class="card task"><span class="phase done" data-i18n="ph_done">entregue</span><span class="n">10/11</span><h3 data-i18n="t2_h">Repositório com teste mínimo</h3><p data-i18n="t2_p">Repositório privado com teste mínimo sem rede, integração contínua verde em ambiente limpo e varredura automática de termos internos.</p></div>
+      <div class="card task"><span class="phase done" data-i18n="ph_done">entregue</span><span class="n">14/11</span><h3 data-i18n="t3_h">Versão 1.0.0</h3><p data-i18n="t3_p">Dataset de 600 casos verificado em dois modos sem falhas, validação funcional nos 600 com o modelo comercial e 21 modelos locais na amostra de 48.</p></div>
+      <div class="card task"><span class="phase done" data-i18n="ph_done">entregue</span><span class="n">15/11</span><h3 data-i18n="t4_h">Apresentação ao orientador</h3><p data-i18n="t4_p">Apresentação em aula e avaliação escrita: 21 apontamentos sobre estatística, origem dos dados, ética e reprodutibilidade.</p></div>
+      <div class="card task"><span class="phase done" data-i18n="ph_done">entregue</span><span class="n">16–19/11</span><h3 data-i18n="t5_h">Resposta aos apontamentos</h3><p data-i18n="t5_p">Estatística pareada com TOST, teste de utilidade TSTR, varredura de entidades nomeadas, ablação da divergência no CAIS/RNP e dicionário semântico na versão publicada do <em>mock</em>.</p></div>
+      <div class="card task"><span class="phase done" data-i18n="ph_done">entregue</span><span class="n">20/11</span><h3 data-i18n="t6_h">Seis modelos na amostra de 240</h3><p data-i18n="t6_p">Validação com seis modelos locais em 240 casos, duas temperaturas e três repetições: equivalência em todos os modelos de 4 bilhões ou mais.</p></div>
+      <div class="card task"><span class="phase done" data-i18n="ph_done">entregue</span><span class="n">20–22/11</span><h3 data-i18n="t7_h">Avaliação do artefato por três LLMs</h3><p data-i18n="t7_p">Tarefas 7 e 8 da disciplina: Gemini, ChatGPT e Claude avaliaram o artefato com as instruções do comitê de artefatos, em dois níveis de raciocínio. Nove correções apontadas.</p></div>
+      <div class="card task"><span class="phase done" data-i18n="ph_done">entregue</span><span class="n">23/11</span><h3 data-i18n="t8_h">Versão 1.1.0</h3><p data-i18n="t8_p">Base de 600 com seis modelos locais, as nove correções aplicadas, teste público novo para nomes em cabeçalhos e saídas regeneradas sem sobrescrever as entregues.</p></div>
+      <div class="card task"><span class="phase" data-i18n="ph_pending">pendente</span><span class="n">→</span><h3 data-i18n="t9_h">Repositório público e DOI</h3><p data-i18n="t9_p">Depende das autorizações escritas das fontes e de uma revisão de reidentificação por quem conhece os originais. Só então o repositório abre e o DOI é gerado.</p></div>
+      </div>
+      <button type="button" class="tl-btn next" id="tasks-next" aria-label="Próximas">›</button>
     </div>
   </div>
 </section>
+
+<section class="block" id="equipe">
+  <div class="wrap">
+    <p class="kick" data-i18n="tm_kick">Equipe</p>
+    <h2 data-i18n="tm_h2">Quem fez.</h2>
+    <div class="grid3 team">
+      <div class="card person"><b>Alex Sandre Pinheiro Severo</b><span data-i18n="p1">mestrando · PPGES · UNIPAMPA</span></div>
+      <div class="card person"><b>Diego Kreutz</b><span data-i18n="p2">orientador · UNIPAMPA</span></div>
+    </div>
+    <p class="caption" data-i18n="tm_cap">Mestrado Profissional em Engenharia de Software, Universidade Federal do Pampa, 2026. Fontes das bases: um CSIRT regional (não publicada), CAIS/RNP 2025 (BSD 3-Clause) e VERIS Community Database (CC BY-SA 4.0). O artigo e o artefato estão em preparação para avaliação com os selos Disponível, Funcional, Sustentável e Reprodutível.</p>
+    <div class="actions">
+      <span class="btn btn-muted" data-i18n="lk_data">Dataset e código: acesso restrito até as autorizações</span>
+      <a class="btn btn-ghost" href="https://github.com/anetsev/mock-incidentes-site" target="_blank" rel="noopener" data-i18n="lk_site">Esta página no GitHub ↗</a>
+    </div>
+  </div>
+</section>
+</main>
 
 <footer>
-  <div class="wrap foot">
-    <div>
-      <h3>Código e dados</h3>
-      <p>Repositório privado até a liberação. O link entra aqui quando ele for aberto.</p>
-      <div class="badges"><span class="pill ok">Funcional</span><span class="pill ok">Sustentável</span><span class="pill ok">Reprodutível</span><span class="pill pend">Disponível</span></div>
-    </div>
-    <div>
-      <h3>Quem fez</h3>
-      <p>Alex Sandre Pinheiro Severo, Mestrado Profissional em Engenharia de Software (PPGES), Unipampa. Orientação: Prof. Diego Kreutz.</p>
-    </div>
-    <div>
-      <h3>Sobre os números</h3>
-      <p>Resultados de 15 a 17/11/2026. Fontes das bases: CSIRT regional (não publicada), CAIS/RNP 2025 e VERIS Community Database.</p>
-    </div>
+  <div class="wrap">
+    <span><b>Mock600</b> · <span data-i18n="ft">PPGES · UNIPAMPA · 2026</span></span>
+    <span class="fine" data-i18n="ft_fine">Alex Sandre Pinheiro Severo · orientação: Diego Kreutz</span>
   </div>
 </footer>
 
-<script>
-(function(){
-  var css = getComputedStyle(document.documentElement);
-  function tok(n){ return css.getPropertyValue(n).trim(); }
-  var NS = "http://www.w3.org/2000/svg";
-  function el(name, attrs, text){
-    var e = document.createElementNS(NS, name);
-    for (var k in attrs) e.setAttribute(k, attrs[k]);
-    if (text != null) e.textContent = text;
-    return e;
-  }
-  function fmt(v){ return v.toFixed(1).replace(".", ","); }
-
-  // Gráfico de pontos: linhas = grupos; eixo x com min/max fixos
-  function dots(svg, opt){
-    var W = 460, left = 128, right = 18, top = 14, rowH = opt.rowH || 52;
-    var x = function(v){ return left + (v - opt.min) / (opt.max - opt.min) * (W - left - right); };
-    var axisY = top + opt.rows.length * rowH + 6;
-    svg.setAttribute("viewBox", "0 0 " + W + " " + (axisY + 24));
-    for (var t = opt.min; t <= opt.max; t += opt.step){
-      svg.appendChild(el("line", {x1:x(t), x2:x(t), y1:top - 6, y2:axisY, stroke:tok("--rule"), "stroke-width":1}));
-      svg.appendChild(el("text", {x:x(t), y:axisY + 16, "text-anchor":"middle"}, t + "%"));
-    }
-    opt.rows.forEach(function(r, i){
-      var cy = top + i * rowH + rowH / 2;
-      svg.appendChild(el("text", {x:0, y:cy + 4, class:"lab"}, r.label));
-      if (r.base != null){
-        svg.appendChild(el("line", {x1:x(r.base), x2:x(r.base), y1:cy - 15, y2:cy + 15, stroke:tok("--muted"), "stroke-width":1.5, "stroke-dasharray":"3 3"}));
-      }
-      var vals = r.vals.map(function(v){ return v; });
-      var lo = Math.min.apply(null, vals.map(function(v){return v.v;})), hi = Math.max.apply(null, vals.map(function(v){return v.v;}));
-      svg.appendChild(el("line", {x1:x(lo), x2:x(hi), y1:cy, y2:cy, stroke:tok("--rule"), "stroke-width":3}));
-      r.vals.forEach(function(v, j){
-        var cx = x(v.v);
-        svg.appendChild(el("circle", {cx:cx, cy:cy, r:6, fill:tok(v.c), stroke:tok("--surface"), "stroke-width":2}));
-        var dy = j === 0 ? -11 : 21;
-        svg.appendChild(el("text", {x:cx, y:cy + dy, "text-anchor":"middle", class:"val"}, fmt(v.v)));
-      });
-    });
-  }
-
-  dots(document.getElementById("c1"), {
-    min:80, max:100, step:5,
-    rows:[
-      {label:"Geral (600)", base:94.8, vals:[{v:94.4,c:"--accent"},{v:94.4,c:"--warn"}]},
-      {label:"CSIRT regional", vals:[{v:100.0,c:"--accent"},{v:99.1,c:"--warn"}]},
-      {label:"CAIS/RNP", vals:[{v:92.2,c:"--accent"},{v:88.6,c:"--warn"}]}
-    ]
-  });
-  dots(document.getElementById("c2"), {
-    min:70, max:80, step:2,
-    rows:[
-      {label:"TF-IDF + reg. log.", vals:[{v:77.0,c:"--muted"},{v:76.2,c:"--accent"}]},
-      {label:"BERT", vals:[{v:78.3,c:"--muted"},{v:78.1,c:"--accent"}]}
-    ]
-  });
-
-  // Animações: reexecutar o desfazer das tarjas e o fluxo
-  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var flow = document.getElementById("flow");
-  function replay(){
-    if (reduce) return;
-    var nodes = document.querySelectorAll("#tk .r, #stamps .stamp");
-    nodes.forEach(function(n){ n.style.animation = "none"; void n.offsetWidth; n.style.animation = ""; });
-    flow.classList.remove("play"); void flow.offsetWidth; flow.classList.add("play");
-  }
-  document.getElementById("replay").addEventListener("click", replay);
-  if (!reduce) flow.classList.add("play");
-})();
-</script>
+<div class="tip" id="tip" role="tooltip" hidden></div>
+<script src="assets/app.js"></script>
 </body>
 </html>
