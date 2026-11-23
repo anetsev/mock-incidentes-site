@@ -42,22 +42,33 @@
 
 <main id="main">
 <section class="hero">
-  <div class="wrap">
-    <p class="kick" data-i18n="hero_kick">Mestrado Profissional em Engenharia de Software · PPGES · UNIPAMPA · 2026</p>
-    <h1 data-i18n="hero_h1">Seiscentos incidentes reais que podem ser publicados: o que identifica saiu, o relato ficou.</h1>
-    <p class="lead" data-i18n="hero_lead">O Mock600 é uma base de 600 notificações de incidentes de segurança em 12 categorias da NIST SP 800-61, construída a partir de registros reais que não podem ser divulgados. Os identificadores foram substituídos por valores fictícios consistentes e o texto foi preservado. Uma bateria pública de verificação e uma validação com classificadores baseados em LLM mostram que, para o classificador, o <em>mock</em> é o mesmo incidente que o original.</p>
-    <p class="authors">Alex Sandre Pinheiro Severo · <span data-i18n="hero_adv">orientação</span>: Diego Kreutz</p>
-    <div class="actions">
-      <a class="btn btn-primary" href="#resultados" data-i18n="hero_cta">Ver resultados</a>
-      <a class="btn btn-ghost" href="#como" data-i18n="hero_cta2">Como funciona</a>
-      <span class="btn btn-muted" title="O repositório do dataset e do código abre após as autorizações escritas das fontes" data-i18n="hero_soon">Dataset e código: em breve</span>
+  <div class="wrap hero-grid">
+    <div class="hero-text">
+      <p class="kick" data-i18n="hero_kick">Mestrado Profissional em Engenharia de Software · PPGES · UNIPAMPA · 2026</p>
+      <h1 data-i18n="hero_h1">Seiscentos incidentes reais que <span class="hi">podem ser publicados</span>: o que identifica saiu, o relato ficou.</h1>
+      <p class="lead" data-i18n="hero_lead">O Mock600 é uma base de 600 notificações de incidentes de segurança em 12 categorias da NIST SP 800-61, construída a partir de registros reais que não podem ser divulgados. Os identificadores foram substituídos por valores fictícios consistentes e o texto foi preservado. Uma bateria pública de verificação e uma validação com classificadores baseados em LLM mostram que, para o classificador, o <em>mock</em> é o mesmo incidente que o original.</p>
+      <p class="authors">Alex Sandre Pinheiro Severo · <span data-i18n="hero_adv">orientação</span>: Diego Kreutz</p>
+      <div class="actions">
+        <a class="btn btn-primary" href="#resultados" data-i18n="hero_cta">Ver resultados</a>
+        <a class="btn btn-ghost" href="#como" data-i18n="hero_cta2">Como funciona</a>
+        <span class="btn btn-muted" title="O repositório do dataset e do código abre após as autorizações escritas das fontes" data-i18n="hero_soon">Dataset e código: em breve</span>
+      </div>
     </div>
-    <div class="stats" aria-label="Números do projeto">
-      <div class="stat"><b>600</b><span data-i18n="st_cases">incidentes, 50 por categoria, 12 categorias NIST</span></div>
-      <div class="stat"><b>325</b><span data-i18n="st_transf">registros transformados; os 275 da VCDB são públicos e ficam intactos</span></div>
-      <div class="stat"><b>0</b><span data-i18n="st_fail">falhas em 30 testes de privacidade e fidelidade, em dois modos</span></div>
-      <div class="stat"><b>7</b><span data-i18n="st_models">classificadores de LLM: acurácia equivalente nas duas bases em todos</span></div>
-    </div>
+    <aside class="hero-panel" aria-label="A base de relance">
+      <p class="kick" data-i18n="hp_kick">A base, de relance</p>
+      <div class="seg" role="img" aria-label="106 CSIRT regional, 219 CAIS/RNP, 275 VCDB"><i class="csirt" style="width:17.7%"></i><i class="cais" style="width:36.5%"></i><i class="vcdb" style="width:45.8%"></i></div>
+      <div class="seg-legend">
+        <span><i class="sw csirt"></i>106 <span data-i18n="hp_csirt">CSIRT regional</span></span>
+        <span><i class="sw cais"></i>219 CAIS/RNP</span>
+        <span><i class="sw vcdb"></i>275 VCDB</span>
+      </div>
+      <div class="facts">
+        <div class="fact"><b>600</b><span data-i18n="st_cases">incidentes, 50 por categoria, 12 categorias NIST</span></div>
+        <div class="fact"><b>325</b><span data-i18n="st_transf">registros transformados; os 275 da VCDB são públicos e ficam intactos</span></div>
+        <div class="fact"><b>0</b><span data-i18n="st_fail">falhas em 30 testes de privacidade e fidelidade, em dois modos</span></div>
+        <div class="fact"><b>7</b><span data-i18n="st_models">classificadores de LLM: acurácia equivalente nas duas bases em todos</span></div>
+      </div>
+    </aside>
   </div>
 </section>
 

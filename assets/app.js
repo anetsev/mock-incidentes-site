@@ -23,7 +23,8 @@
   const EN = {
     skip: 'Skip to content', nav_problem: 'Problem', nav_how: 'How it works', nav_method: 'Method', nav_results: 'Results', nav_tasks: 'Deliverables', nav_team: 'Team',
     hero_kick: 'Professional Master\'s in Software Engineering · PPGES · UNIPAMPA · 2026',
-    hero_h1: 'Six hundred real incidents that can be published: what identifies is gone, the report stays.',
+    hero_h1: 'Six hundred real incidents that <span class="hi">can be published</span>: what identifies is gone, the report stays.',
+    hp_kick: 'The dataset at a glance', hp_csirt: 'regional CSIRT',
     hero_lead: 'Mock600 is a dataset of 600 security-incident notifications in 12 NIST SP 800-61 categories, built from real records that cannot be released. Identifiers were replaced by consistent fictitious values and the text was preserved. A public verification battery and a validation with LLM-based classifiers show that, for the classifier, the mock is the same incident as the original.',
     hero_adv: 'advisor', hero_cta: 'See the results', hero_cta2: 'How it works', hero_soon: 'Dataset and code: coming soon',
     st_cases: 'incidents, 50 per category, 12 NIST categories', st_transf: 'transformed records; the 275 from VCDB are public and left intact',
